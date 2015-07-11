@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="test"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="C:/Users/Prem/Downloads/gson-2.3.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Prem/.m2/repository/uk/co/caprica/vlcj/3.7.0/vlcj-3.7.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Prem/.m2/repository/ch/qos/logback/logback-classic/1.1.2/logback-classic-1.1.2.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Prem/.m2/repository/ch/qos/logback/logback-core/1.1.2/logback-core-1.1.2.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Prem/.m2/repository/net/java/dev/jna/jna/3.5.2/jna-3.5.2.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Prem/.m2/repository/org/slf4j/slf4j-api/1.7.10/slf4j-api-1.7.10.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Prem/.m2/repository/net/java/dev/jna/platform/3.5.2/platform-3.5.2.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
