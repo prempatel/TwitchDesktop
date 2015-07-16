@@ -13,7 +13,7 @@ import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 
 /**
- * Class for JList custom cell rendering
+ * Class for custom JList cell rendering
  * 
  * @author Prem
  * @since 2015-07-10
@@ -45,10 +45,9 @@ public class StreamListCellRenderer extends JLabel implements ListCellRenderer<O
 	public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
 		
 		setText(value.toString());
-		
+
 		for(String stream : streamList){
 			if(stream.equals(value.toString())){
-				
 				//checks if stream is online and will only render if list & map are equal size (or causes error)
 				if ((streamStatus.size() == streamList.size()) && streamInfo.getStreamStatusMap().get(stream)) {
 					if (isSelected) {

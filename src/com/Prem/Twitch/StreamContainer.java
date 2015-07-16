@@ -22,21 +22,15 @@ public class StreamContainer {
 	private static List<String> streamList = new ArrayList<String>();
 	private static Map<String, Boolean> streamStatus = new ConcurrentHashMap<String, Boolean>();
 	
-	public Stream getStream() {
-		return stream;
-	}
+	public Stream getStream() { return stream; }
+
+	public List<String> getStreamsList(){ return streamList; }
 	
-	public void addStream(String stream){
-		streamList.add(stream);
-	}
-	
-	public List<String> getStreamsList(){
-		return streamList;
-	}
-	
-	public Map<String, Boolean> getStreamStatusMap(){
-		return streamStatus;
-	}
+	public Map<String, Boolean> getStreamStatusMap(){ return streamStatus; }
+
+    public boolean isOnline(){
+        return stream != null;
+    }
 	
 	/**
 	 * Retrieves stream information and will display in gui
@@ -50,10 +44,6 @@ public class StreamContainer {
 								+ "<br>Watch at " + stream.getChannel().getUrl() + "</html>"
 								:"Stream is offline";
 	}
-	
-	public boolean isOnline(){
-		return stream != null;
-	}
 
 	/**
 	 * Retrieves a preview image to display in gui, if stream is online
@@ -64,12 +54,13 @@ public class StreamContainer {
 		ImageIcon previewIcon = null;	
 		if(isOnline()){
 			BufferedImage previewImage = null;
-			
+
 			try {
 				URL previewUrl = new URL(stream.getPreviewTemplate());
 				previewImage = ImageIO.read(previewUrl);
+
 			} catch (IOException ex) { ex.printStackTrace(); }
-			
+
 			previewIcon = new ImageIcon(previewImage);
 		}
 		return previewIcon;

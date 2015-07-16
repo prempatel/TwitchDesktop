@@ -1,27 +1,27 @@
 package com.Prem.Twitch;
 
+import com.sun.jna.NativeLibrary;
+import uk.co.caprica.vlcj.component.EmbeddedMediaPlayerComponent;
+import uk.co.caprica.vlcj.player.embedded.DefaultAdaptiveRuntimeFullScreenStrategy;
+import uk.co.caprica.vlcj.runtime.RuntimeUtil;
+
 import javax.swing.*;
-import java.util.concurrent.*;
+import javax.swing.border.EtchedBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import java.awt.*;
 import java.awt.event.*;
-import java.awt.BorderLayout;
-import java.awt.Desktop;
-import java.awt.Dimension;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
-import javax.swing.border.EtchedBorder;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import com.sun.jna.NativeLibrary;
-import uk.co.caprica.vlcj.component.EmbeddedMediaPlayerComponent;
-import uk.co.caprica.vlcj.player.embedded.DefaultAdaptiveRuntimeFullScreenStrategy;
-import uk.co.caprica.vlcj.runtime.RuntimeUtil;
 
 /**
  * Twitch Desktop
@@ -32,12 +32,11 @@ import uk.co.caprica.vlcj.runtime.RuntimeUtil;
  *
  */
 public class TwitchGui extends JFrame{
-	
 	private static final long serialVersionUID = -804313717028413743L;
 	private static final String twitchUrl = "http://twitch.tv/";
-	
-	private static EmbeddedMediaPlayerComponent mediaPlayer;
-	
+
+    private static EmbeddedMediaPlayerComponent mediaPlayer;
+
 	private JLabel textLabel, statusLabel;
 	private JPanel mainPanel, infoPanel, statusPanel, enterPanel, listPanel, buttonPanel, mediaPlayerPanel;
 	private JTextField channelText;
@@ -51,26 +50,29 @@ public class TwitchGui extends JFrame{
 	/**
 	 * Constructor to initialize components, load list, start thread executor
 	 */
-	public TwitchGui(){
+    private TwitchGui(){
 		this.setTitle("TwitchChecker");
 		this.setSize(640, 480);
 		this.setMinimumSize(new Dimension(640, 480));
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        this.setMaximumSize(screenSize);
 		this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-		this.setIconImage(null);
+		this.setIconImage(new ImageIcon("./lib/twitch.png").getImage());
 		this.setLayout(new BorderLayout(5, 5));
 		
 		NativeLibrary.addSearchPath(RuntimeUtil.getLibVlcLibraryName(), "./lib");
+//		System.setProperty("jna.library.path", "./lib/");
 		
 		streamPrefs = Preferences.userNodeForPackage(this.getClass());
 		
 		this.addWindowListener(new WindowAdapter(){
-			public void windowClosing(WindowEvent arg0) {
+			public void windowClosing(WindowEvent we) {
 				mediaPlayer.release();
 				System.exit(0);
 			}
 		});
-		
-		textLabel = new JLabel("Enter a TwitchTV stream", SwingConstants.CENTER);	
+
+		textLabel = new JLabel("Enter a TwitchTV stream", SwingConstants.CENTER);
 		textLabel.setAlignmentX(CENTER_ALIGNMENT);
 		
 		statusLabel = new JLabel("Stream info will display here.", SwingConstants.CENTER);
@@ -81,64 +83,48 @@ public class TwitchGui extends JFrame{
 		channelText.setToolTipText("Enter a stream to enable the buttons");
 		channelText.getDocument().addDocumentListener(new DocumentListener(){
 			public void changedUpdate(DocumentEvent e) {}
-
-			public void insertUpdate(DocumentEvent e) {
-				checkText();				
-			}
-
-			public void removeUpdate(DocumentEvent e) {
-				checkText();			
-			}
+			public void insertUpdate (DocumentEvent e) { checkText(); }
+			public void removeUpdate (DocumentEvent e) { checkText(); }
 		});
 		
 		channelText.addKeyListener(new KeyAdapter(){
 			public void keyReleased(KeyEvent ke) {
-				if(ke.getKeyCode() == KeyEvent.VK_ENTER){
-					addButton.doClick();
-				}
+				if(ke.getKeyCode() == KeyEvent.VK_ENTER){ addButton.doClick(); }
 			}
 		});
 
 		addButton = new JButton("Add Stream");
 		addButton.setEnabled(false);
 		addButton.setAlignmentX(CENTER_ALIGNMENT);
-		addButton.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-				addStream(channelText.getText().trim());
-				channelText.setText(null);
-			}	
-		});
+		addButton.addActionListener(actionEvent -> {
+            addStream(channelText.getText().trim());
+            channelText.setText(null);
+        });
 
 		removeButton = new JButton("Remove Stream");
 		removeButton.setEnabled(false);
 		removeButton.setAlignmentX(CENTER_ALIGNMENT);
-		removeButton.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-					removeStream();
-			}
-		});
+		removeButton.addActionListener(actionEvent -> removeStream());
 		
 		jStreams = new JList<String>();
 		jStreams.setCellRenderer(new StreamListCellRenderer());
 		jStreams.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		jStreams.setVisibleRowCount(10);
 		jStreams.setFixedCellWidth(115);
-		jStreams.addListSelectionListener(new ListSelectionListener(){
-			public void valueChanged(ListSelectionEvent ls) {
-				if (!ls.getValueIsAdjusting()) {
-					if (!jStreams.isSelectionEmpty()) {
-						setStream();
-						removeButton.setEnabled(true);
-					}
-					else {
-						removeButton.setEnabled(false);
-						statusLabel.setIcon(null);
-						statusLabel.setText("Stream info will display here.");
-						pack();
-					}
-				}
-			}
-		});
+		jStreams.addListSelectionListener(listSel -> {
+            if (!listSel.getValueIsAdjusting()) {
+                if (!jStreams.isSelectionEmpty()) {
+                    setStream();
+                    removeButton.setEnabled(true);
+                }
+                else {
+                    removeButton.setEnabled(false);
+                    statusLabel.setIcon(null);
+                    statusLabel.setText("Stream info will display here.");
+                    pack();
+                }
+            }
+        });
 		
 		jStreams.addMouseListener(new MouseAdapter(){
 			//Opens dialog to watch stream in mediaplayer
@@ -155,38 +141,30 @@ public class TwitchGui extends JFrame{
 				if (me.isPopupTrigger()) {
 					JPopupMenu popMenu = new JPopupMenu();
 					JMenuItem openStream = new JMenuItem("Open Stream");
-					openStream.addActionListener(new ActionListener() {
-						public void actionPerformed(ActionEvent arg0) {
-							try {
-								if (!jStreams.isSelectionEmpty()) {
-									openStream(new URI(twitchUrl
-												+ jStreams.getSelectedValue()));
-								}
-							} catch (URISyntaxException e) {
-								e.printStackTrace();
-							}
-						}
-					});
+					openStream.addActionListener(actionEvent -> {
+                        try {
+                            if (!jStreams.isSelectionEmpty()) {
+                                openStream(new URI(twitchUrl
+                                            + jStreams.getSelectedValue()));
+                            }
+                        } catch (URISyntaxException e) {
+                            e.printStackTrace();
+                        }
+                    });
 					JMenuItem openStreamPopout = new JMenuItem("Open Popout Stream");
-					openStreamPopout.addActionListener(new ActionListener() {
-						public void actionPerformed(ActionEvent arg0) {
-							try {
-								if (!jStreams.isSelectionEmpty()) {
-									openStream(new URI(twitchUrl 
-												+ jStreams.getSelectedValue() 
-												+ "/popout"));
-								}
-							} catch (URISyntaxException e) {
-								e.printStackTrace();
-							}
-						}
-					});
+					openStreamPopout.addActionListener(actionEvent -> {
+                        try {
+                            if (!jStreams.isSelectionEmpty()) {
+                                openStream(new URI(twitchUrl
+                                            + jStreams.getSelectedValue()
+                                            + "/popout"));
+                            }
+                        } catch (URISyntaxException e) {
+                            e.printStackTrace();
+                        }
+                    });
 					JMenuItem removeMenu = new JMenuItem("Remove Stream");
-					removeMenu.addActionListener(new ActionListener() {
-						public void actionPerformed(ActionEvent arg0) {
-							removeStream();
-						}
-					});
+					removeMenu.addActionListener(actionEvent -> removeStream());
 					popMenu.add(openStream);
 					popMenu.add(openStreamPopout);
 					popMenu.add(removeMenu);
@@ -240,12 +218,16 @@ public class TwitchGui extends JFrame{
 		this.setVisible(true);
 	}
 
-	/**
-	 * Add stream to Preferences then load/update stream model
+    public static TwitchGui setupGui() {
+        return new TwitchGui();
+    }
+
+    /**
+	 * Add stream to Preferences then update stream model
 	 * 
-	 * @param streamName
+	 * @param streamName Twitch stream/channel name
 	 */
-	public void addStream(String streamName){
+    private void addStream(String streamName){
 		List<String> streamList = streamInfo.getStreamsList();
 		if(streamData.streamExists(streamName)){
 			if (streamList.contains(streamName.toLowerCase()) || streamList.contains(streamName.toUpperCase())) {
@@ -264,7 +246,7 @@ public class TwitchGui extends JFrame{
 	/**
 	 * Remove stream from Preferences, then load/update stream model
 	 */
-	public void removeStream(){
+    private void removeStream(){
 		String selectedValue = jStreams.getSelectedValue();		
 		if (selectedValue != null) {
 			streamPrefs.remove(selectedValue);
@@ -279,7 +261,7 @@ public class TwitchGui extends JFrame{
 	/**
 	 * Retrieves streams from registry, adds to the list model, and updates stream statuses
 	 */
-	public void loadStreamList(){
+    private void loadStreamList(){
 		streamModel = new DefaultListModel<String>();
 		List<String> streamList = streamInfo.getStreamsList();
 		String selectedItem = jStreams.getSelectedValue();
@@ -288,7 +270,6 @@ public class TwitchGui extends JFrame{
 			protected Void doInBackground() throws Exception {			
 				String[] streamKeys = null;
 				try {
-					//get keys that contain streams from registry
 					streamKeys = streamPrefs.keys();
 				} catch (BackingStoreException e) {
 					e.printStackTrace();
@@ -297,34 +278,30 @@ public class TwitchGui extends JFrame{
 				streamList.clear();
 				
 				//add each stream to the streamlist by getting value from Preferences keys
-				for(String streamKeyValue : streamKeys){
+                assert streamKeys != null;
+                for(String streamKeyValue : streamKeys){
 					String streamValue = streamPrefs.get(streamKeyValue, "Unavailable");
 					streamList.add(streamValue);
 				}
-				
-				for(String stream : streamList){
-					publish(stream);
-				}
+
+                /* for(String stream : streamList){ publish(stream); } */
+                streamList.forEach(this::publish);
 				return null;
 			}
 			
 			protected void process(List<String> publishedStreamList){
-				for(String stream : publishedStreamList){
-					streamModel.addElement(stream);
-				}
+                publishedStreamList.forEach(streamModel::addElement);
 			}
 			
 			protected void done(){
-				//Run executor to check if any streams are online
+				//Run executor after loading list to check if streams are online
 				ExecutorService streamDataWork = Executors.newSingleThreadExecutor();
 				streamDataWork.submit(updateStreamStatus());
 				streamDataWork.shutdown();
 				
 				jStreams.setModel(streamModel);
-				if (selectedItem != null || selectedItem != "") {
-					jStreams.setSelectedValue(selectedItem, false);
-				}
-				pack();
+                jStreams.setSelectedValue(selectedItem, false);
+                pack();
 			}
 		}.execute();
 	}
@@ -334,12 +311,11 @@ public class TwitchGui extends JFrame{
 	 * 
 	 * @return Runnable object to execute updating of stream status
 	 */
-	public Runnable updateStreamStatus(){	
+    private Runnable updateStreamStatus(){
 		return new Runnable() {
 			public void run() {
-				streamData.getStreamStatus(streamInfo.getStreamsList(), 
+				streamData.getStreamStatus(streamInfo.getStreamsList(),
 									 streamInfo.getStreamStatusMap());
-				
 				updateStreamModel();
 			}
 		};
@@ -348,23 +324,22 @@ public class TwitchGui extends JFrame{
 	/**
 	 * Reload streams to list model and update JList
 	 */
-	public void updateStreamModel(){
+    private void updateStreamModel(){
 		streamModel = new DefaultListModel<String>();
-		
-		for(String stream : streamInfo.getStreamsList()){
-			streamModel.addElement(stream);
-		}
+
+        List<String> streamList = streamInfo.getStreamsList();
+        streamList.forEach(streamModel::addElement);
 		
 		jStreams.setModel(streamModel);
 		System.out.println("Updated Model");
 	}
 	
 	/**
-	 * Retrieve stream information
+	 * Retrieve summary of stream info, if stream is online
 	 * 
-	 * @param streamName
+	 * @param streamName Twitch stream/channel name
 	 */
-	public String getStreamInfo(String streamName){
+    private String getStreamInfo(String streamName){
 		streamInfo = streamData.getJsonDataFromApi(streamName);
 		return streamInfo.isOnlineString();
 	}
@@ -403,7 +378,7 @@ public class TwitchGui extends JFrame{
 	/**
 	 * Starts a scheduled executor to periodically update stream information
 	 */
-	public void startStreamUpdateWorker(){
+    private void startStreamUpdateWorker(){
 		ScheduledExecutorService streamStatusExecutor = Executors.newSingleThreadScheduledExecutor();	
 		streamStatusExecutor.scheduleAtFixedRate(updateStreamStatus(), 30, 30, TimeUnit.SECONDS);		
 	}
@@ -413,7 +388,7 @@ public class TwitchGui extends JFrame{
 	 * 
 	 * @param urlStream URL to Twitch stream
 	 */
-	public void openStream(URI urlStream){
+    private void openStream(URI urlStream){
 		Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
 		if(desktop != null){
 			try {
@@ -425,7 +400,7 @@ public class TwitchGui extends JFrame{
 	/**
 	 * Checks if stream is online, then displays a dialog to select stream quality or error message.
 	 */
-	public void checkAndPlayStream(){
+    private void checkAndPlayStream(){
 		Map<String, Boolean> streamStatus = streamInfo.getStreamStatusMap();
 		//Checks if current stream is online
 		if(streamStatus.get(jStreams.getSelectedValue())){
@@ -444,20 +419,12 @@ public class TwitchGui extends JFrame{
 		}
 	}
 	
-	public void checkText(){
-		if(channelText.getText().isEmpty()){
-			addButton.setEnabled(false);
-		}
-		else{
-			addButton.setEnabled(true);
-		}
+	private void checkText(){
+		if(channelText.getText().isEmpty()) { addButton.setEnabled(false); }
+		else { addButton.setEnabled(true); }
 	}
 	
 	public static void main(String[] args){
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				new TwitchGui();
-			}
-		});
+		SwingUtilities.invokeLater(TwitchGui::setupGui);
 	}
 }

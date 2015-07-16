@@ -11,10 +11,6 @@ public class AccessToken {
 	@SerializedName("sig")
 	private String tokenSig;
 	
-	public String getStreamToken() {
-		return streamToken;
-	}
-	
 	public String getTokenSig() {
 		return tokenSig;
 	}
@@ -22,7 +18,7 @@ public class AccessToken {
 	public String getEncodedToken(){
 		String encodedToken = null;
 		try {
-			encodedToken = URLEncoder.encode(getStreamToken(), "UTF-8");
+			encodedToken = URLEncoder.encode(streamToken, "UTF-8");
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}

@@ -17,17 +17,18 @@ import com.google.gson.Gson;
  *
  */
 public class TwitchData {
-	
+
 	/**
 	 * Retrieves JSON data for stream
 	 * @param streamName Twitch stream/channel name
-	 * @return	(StreamContainer) POJO to store JSON data 
+	 * @return	StreamContainer POJO to store JSON data
 	 */
 	public StreamContainer getJsonDataFromApi(String streamName){
 		StreamContainer streamData = null;
+		String url = "https://api.twitch.tv/kraken/streams/" + streamName;
 		if (!streamName.isEmpty()) {
 			Gson gson = new Gson();
-			StringBuffer responseData = openHttpAndGetData(streamName);
+			StringBuffer responseData = openHttpAndGetData(url);
 			if (responseData != null) {
 				streamData = gson.fromJson(responseData.toString(), StreamContainer.class);
 			}
@@ -37,16 +38,15 @@ public class TwitchData {
 	
 	/**
 	 * Gets JSON data from URL and stores it in AccessToken class.
-	 * @param channelName
+	 * @param channelName Twitch stream/channel name
 	 * @return AccessToken object
 	 */
-	public AccessToken getAndStoreAccessToken(String channelName){
+	private AccessToken getAndStoreAccessToken(String channelName){
 		String tokenUrl = ("https://api.twitch.tv/api/channels/" + channelName + "/access_token");
 		Gson gson = new Gson();		
 		StringBuffer tokenData = openAndGrabDataFromUrl(tokenUrl);
 
-		AccessToken accessToken = gson.fromJson(tokenData.toString(), AccessToken.class);	
-		return accessToken;
+		return gson.fromJson(tokenData.toString(), AccessToken.class);
 	}
 	
 	/**
@@ -54,25 +54,25 @@ public class TwitchData {
 	 * @param channelName Twitch stream/channel name
 	 * @return String format of m3u8 file
 	 */
-	public String requestTwitchStreamPlaylist(String channelName){	
+	private String requestTwitchStreamPlaylist(String channelName){
 		AccessToken accessToken = getAndStoreAccessToken(channelName);
 		String encodedToken = accessToken.getEncodedToken();
-		String sigFromAccessToken = accessToken.getTokenSig();
+		String tokenSig = accessToken.getTokenSig();
 		
-		String requestUrlString = "http://usher.twitch.tv/api/channel/hls/" 
-							+ channelName + ".m3u8?player=twitchweb&&token=" + encodedToken + "&sig=" + sigFromAccessToken 
+		String requestUrl = "http://usher.twitch.tv/api/channel/hls/" 
+							+ channelName + ".m3u8?player=twitchweb&&token=" + encodedToken + "&sig=" + tokenSig
 							+ "&allow_source=false&type=any";
 		
-		StringBuffer linkData = openAndGrabDataFromUrl(requestUrlString);
+		StringBuffer linkData = openAndGrabDataFromUrl(requestUrl);
 		return linkData.toString();
 	}
 	
 	/**
 	 * Opens connection and inputstream to URL and returns data in a StringBuffer
-	 * @param URL
+	 * @param url URL to retrieve data from, specifically JSON in this case (Ex. https://api.twitch.tv/kraken/streams/riotgames)
 	 * @return StringBuffer containing data from URL
 	 */
-	public StringBuffer openAndGrabDataFromUrl(String url){
+	private StringBuffer openAndGrabDataFromUrl(String url){
 		String tempData;
 		StringBuffer data = null;
 		try {
@@ -83,23 +83,22 @@ public class TwitchData {
 			while((tempData = buffReader.readLine()) != null){
 				data.append(tempData);
 			}
-			if(buffReader != null){
-				buffReader.close();
-			}
+
+			buffReader.close();
 		}catch (IOException e) {e.printStackTrace();}
-		
+
 		return data;
 	}
 	
 	/**
-	 * Opens connection to Http URL, only if response is 200/OK, and gets JSON data
-	 * @param apiUrlForStream 
+	 * Opens connection to URL and gets JSON data, only if response is 200/OK
+	 * @param apiUrl URL to Twitch's Api (Ex. https://api.twitch.tv/kraken/streams/riotgames)
 	 * @return StringBuffer containing JSON from API
 	 */
-	public StringBuffer openHttpAndGetData(String streamName){
+	private StringBuffer openHttpAndGetData(String apiUrl){
 		StringBuffer responseData = null;
 		try {
-			URL urlApi = new URL("https://api.twitch.tv/kraken/streams/" + streamName);
+			URL urlApi = new URL(apiUrl);
 			HttpURLConnection connUrl = (HttpURLConnection) urlApi.openConnection();
 			if (connUrl.getResponseCode() == HttpURLConnection.HTTP_OK) {
 				BufferedReader reader = new BufferedReader(new InputStreamReader(connUrl.getInputStream()));
@@ -108,13 +107,10 @@ public class TwitchData {
 				while ((inputData = reader.readLine()) != null) {
 					responseData.append(inputData);
 				}
-				if (reader != null) {
-					reader.close();
-				}
+				reader.close();
 			}
-		}catch(IOException e){
-			e.printStackTrace();
-		}
+		}catch(IOException e){ e.printStackTrace(); }
+
 		return responseData;
 	}
 	
@@ -123,7 +119,7 @@ public class TwitchData {
 	 * @param playlist (String from requestTwitchStreamPlaylist() would be common)
 	 * @return array of Twitch Stream links by quality
 	 */
-	public static String[] getStreamLinksFromPlaylist(String playlist){
+	public String[] getStreamLinksFromPlaylist(String playlist){
 		String[] streamsByQuality = new String[5];
 		
 		//Source Quality Link
