@@ -8,3 +8,6 @@ Java Twitch application to keep track of favorite streams and more.
 - Dynamic updates to streams to see if its online
 - Integrated VLC player using VLCJ (basic as of now, no control panel, double click to open streams)
 - Will add livestreamer support eventually for other streaming sites
+
+# Preview
+![Imgur](http://i.imgur.com/l5SwCIe.png)
