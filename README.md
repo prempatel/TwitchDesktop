@@ -6,8 +6,8 @@ Java Twitch application to keep track of favorite streams and more.
 - Reloads streams on startup
 - Display panel for stream information
 - Dynamic updates to streams to see if its online
-- Integrated VLC player using <div><a href="http://capricasoftware.co.uk/#/projects/vlcj" title="VLCJ">VLCJ</a></div> (basic as of now, no control panel, double click to open streams)
-- Will add <div><a href="http://docs.livestreamer.io/" title="Livestreamer">Livestreamer</a></div> support eventually for other streaming sites
+- <div>Integrated VLC player using <a href="http://capricasoftware.co.uk/#/projects/vlcj" title="VLCJ">VLCJ</a> (basic as of now, no control panel, double click to open streams)</div>
+- <div>Will add <a href="http://docs.livestreamer.io/" title="Livestreamer">Livestreamer</a> support eventually for other streaming sites</div>
 
 # Preview
 ![Imgur](http://i.imgur.com/l5SwCIe.png)
